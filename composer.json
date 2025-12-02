@@ -1,0 +1,13 @@
+{
+  "name": "binance/api-rest-php",
+  "description": "API REST em PHP para integração com Binance - Sem dependências externas",
+  "type": "project",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "BinanceAPI\\": "src/"
+    }
+  }
+}
