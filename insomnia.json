@@ -146,7 +146,19 @@
       "url": "{{ _.base_url }}/api/trading/create-order",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"api_key\": \"{{ _.api_key }}\",\n  \"secret_key\": \"{{ _.secret_key }}\",\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"BUY\",\n  \"type\": \"LIMIT\",\n  \"quantity\": \"0.001\",\n  \"price\": \"42000\"\n}"
+        "text": "{\n  \"api_key\": \"{{ _.api_key }}\",\n  \"secret_key\": \"{{ _.secret_key }}\",\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"BUY\",\n  \"type\": \"LIMIT\",\n  \"quantity\": \"0.001\",\n  \"price\": \"42000\",\n  \"timeInForce\": \"GTC\",\n  \"stopPrice\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_create_order_market_quote",
+      "_type": "request",
+      "parentId": "fld_trading",
+      "name": "Create Order (MARKET quoteOrderQty)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/trading/create-order",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"api_key\": \"{{ _.api_key }}\",\n  \"secret_key\": \"{{ _.secret_key }}\",\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"BUY\",\n  \"type\": \"MARKET\",\n  \"quoteOrderQty\": \"50\"\n}"
       }
     },
     {

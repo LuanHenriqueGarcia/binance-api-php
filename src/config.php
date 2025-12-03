@@ -4,6 +4,7 @@ namespace BinanceAPI;
 
 class Config
 {
+    /** @var array<string,mixed> */
     private static array $config = [];
     private static bool $loaded = false;
 
@@ -48,6 +49,17 @@ class Config
     }
 
     /**
+     * Definir valores manualmente (uso em testes)
+     *
+     * @param array<string,mixed> $values
+     */
+    public static function fake(array $values): void
+    {
+        self::$config = $values;
+        self::$loaded = true;
+    }
+
+    /**
      * Obter valor de configuração
      *
      * @param string $key Chave da configuração
@@ -75,6 +87,32 @@ class Config
     public static function getBinanceSecretKey(): ?string
     {
         return self::get('BINANCE_SECRET_KEY');
+    }
+
+    /**
+     * Verificar se deve usar testnet
+     */
+    public static function isTestnet(): bool
+    {
+        return self::get('BINANCE_TESTNET', 'false') === 'true';
+    }
+
+    /**
+     * Obter base URL da Binance (mainnet/testnet)
+     */
+    public static function getBinanceBaseUrl(): string
+    {
+        $envUrl = self::get('BINANCE_BASE_URL');
+
+        if ($envUrl) {
+            return rtrim($envUrl, '/');
+        }
+
+        if (self::isTestnet()) {
+            return 'https://testnet.binance.vision';
+        }
+
+        return 'https://api.binance.com';
     }
 
     /**

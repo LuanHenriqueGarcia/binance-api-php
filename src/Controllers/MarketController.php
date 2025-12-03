@@ -2,6 +2,7 @@
 
 namespace BinanceAPI\Controllers;
 use BinanceAPI\BinanceClient;
+use BinanceAPI\Validation;
 
 class MarketController
 {
@@ -9,17 +10,14 @@ class MarketController
      * Obtém o preço atual de um símbolo
      * GET /api/market/ticker?symbol=BTCUSDT
      *
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta da API
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta da API
      */
     public function ticker(array $params): array
     {
         try {
-            if (empty($params['symbol'])) {
-                return [
-                    'success' => false,
-                    'error' => 'Parâmetro "symbol" é obrigatório'
-                ];
+            if ($error = Validation::requireFields($params, ['symbol'])) {
+                return ['success' => false, 'error' => $error];
             }
 
             $client = new BinanceClient();
@@ -27,10 +25,7 @@ class MarketController
                 'symbol' => $params['symbol']
             ]);
 
-            return [
-                'success' => true,
-                'data' => $response
-            ];
+            return $this->formatResponse($response);
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -43,17 +38,14 @@ class MarketController
      * Obtém o livro de pedidos (depth) para um símbolo
      * GET /api/market/order-book?symbol=BTCUSDT&limit=100
      *
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta da API
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta da API
      */
     public function orderBook(array $params): array
     {
         try {
-            if (empty($params['symbol'])) {
-                return [
-                    'success' => false,
-                    'error' => 'Parâmetro "symbol" é obrigatório'
-                ];
+            if ($error = Validation::requireFields($params, ['symbol'])) {
+                return ['success' => false, 'error' => $error];
             }
 
             $client = new BinanceClient();
@@ -64,10 +56,7 @@ class MarketController
                 'limit' => $limit
             ]);
 
-            return [
-                'success' => true,
-                'data' => $response
-            ];
+            return $this->formatResponse($response);
         } catch (\Exception $e) {
             return [
                 'success' => false,
@@ -80,17 +69,14 @@ class MarketController
      * Lista os últimos trades executados para um símbolo
      * GET /api/market/trades?symbol=BTCUSDT&limit=500
      *
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta da API
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta da API
      */
     public function trades(array $params): array
     {
         try {
-            if (empty($params['symbol'])) {
-                return [
-                    'success' => false,
-                    'error' => 'Parâmetro "symbol" é obrigatório'
-                ];
+            if ($error = Validation::requireFields($params, ['symbol'])) {
+                return ['success' => false, 'error' => $error];
             }
 
             $client = new BinanceClient();
@@ -101,15 +87,28 @@ class MarketController
                 'limit' => $limit
             ]);
 
-            return [
-                'success' => true,
-                'data' => $response
-            ];
+            return $this->formatResponse($response);
         } catch (\Exception $e) {
             return [
                 'success' => false,
                 'error' => 'Falha ao obter trades: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * @param array<string,mixed> $response
+     * @return array<string,mixed>
+     */
+    private function formatResponse(array $response): array
+    {
+        if (isset($response['success']) && $response['success'] === false) {
+            return $response;
+        }
+
+        return [
+            'success' => true,
+            'data' => $response
+        ];
     }
 }

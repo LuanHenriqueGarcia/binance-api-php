@@ -11,33 +11,39 @@ class Router
 {
     private string $method;
     private string $path;
+    /** @var array<string,mixed> */
     private array $params;
 
-    public function __construct()
+    /**
+     * @param string|null $method Método HTTP (override para testes)
+     * @param string|null $path Caminho (override para testes)
+     * @param array<string,mixed>|null $params Parâmetros já parseados (override para testes)
+     */
+    public function __construct(?string $method = null, ?string $path = null, ?array $params = null)
     {
-        $this->method = $_SERVER['REQUEST_METHOD'];
-        $this->path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $this->params = $this->parseParams();
+        $this->method = $method ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $this->path = $path ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $this->params = $params ?? $this->parseParams();
     }
 
     /**
      * Parse de parâmetros GET/POST
      *
-     * @return array Parâmetros extraídos
+     * @return array<string,mixed> Parâmetros extraídos
      */
     private function parseParams(): array
     {
-        $params = [];
-
         if ($this->method === 'GET') {
-            $params = $_GET;
-        } elseif ($this->method === 'POST' || $this->method === 'DELETE') {
-            $input = file_get_contents('php://input');
-            $decoded = json_decode($input, true);
-            $params = is_array($decoded) ? $decoded : [];
+            return $_GET ?? [];
         }
 
-        return $params;
+        if ($this->method === 'POST' || $this->method === 'DELETE') {
+            $input = file_get_contents('php://input');
+            $decoded = json_decode($input, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
     }
 
     /**
@@ -141,11 +147,13 @@ class Router
     /**
      * Enviar resposta de sucesso
      *
-     * @param array $data Dados a enviar
+     * @param array<string,mixed> $data Dados a enviar
+     * @param int|null $code Código HTTP opcional
      */
-    private function sendResponse(array $data): void
+    private function sendResponse(array $data, ?int $code = null): void
     {
-        http_response_code(200);
+        $httpCode = $code ?? (($data['success'] ?? true) ? 200 : ($data['code'] ?? 400));
+        http_response_code($httpCode);
         echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 

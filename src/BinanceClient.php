@@ -2,13 +2,19 @@
 
 namespace BinanceAPI;
 
+use BinanceAPI\Config;
+
 class BinanceClient
 {
     private const BASE_URL = 'https://api.binance.com';
     private const TIMEOUT = 10;
+    private const MAX_RETRIES = 2;
+    private const RETRY_DELAY_MS = 200;
 
     private ?string $apiKey = null;
     private ?string $secretKey = null;
+    private string $baseUrl;
+    private bool $verifySsl;
 
     /**
      * Construtor
@@ -20,14 +26,16 @@ class BinanceClient
     {
         $this->apiKey = $apiKey;
         $this->secretKey = $secretKey;
+        $this->baseUrl = Config::getBinanceBaseUrl() ?: self::BASE_URL;
+        $this->verifySsl = Config::get('BINANCE_SSL_VERIFY', 'true') === 'true';
     }
 
     /**
      * Requisição GET pública ou autenticada
      *
      * @param string $endpoint Endpoint da API (ex: /api/v3/ping)
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta decodificada
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta decodificada
      */
     public function get(string $endpoint, array $params = []): array
     {
@@ -36,10 +44,10 @@ class BinanceClient
             $params['timestamp'] = (int)(microtime(true) * 1000);
             $queryString = http_build_query($params);
             $signature = hash_hmac('sha256', $queryString, $this->secretKey);
-            $url = self::BASE_URL . $endpoint . '?' . $queryString . '&signature=' . $signature;
+            $url = $this->baseUrl . $endpoint . '?' . $queryString . '&signature=' . $signature;
         } else {
             // Requisição pública
-            $url = self::BASE_URL . $endpoint;
+            $url = $this->baseUrl . $endpoint;
             if (!empty($params)) {
                 $url .= '?' . http_build_query($params);
             }
@@ -52,8 +60,8 @@ class BinanceClient
      * Requisição POST autenticada
      *
      * @param string $endpoint Endpoint da API
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta decodificada
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta decodificada
      */
     public function post(string $endpoint, array $params = []): array
     {
@@ -68,17 +76,18 @@ class BinanceClient
         $queryString = http_build_query($params);
         $signature = hash_hmac('sha256', $queryString, $this->secretKey);
 
-        $url = self::BASE_URL . $endpoint . '?' . $queryString . '&signature=' . $signature;
+        $payload = $queryString . '&signature=' . $signature;
+        $url = $this->baseUrl . $endpoint;
 
-        return $this->request('POST', $url);
+        return $this->request('POST', $url, $payload);
     }
 
     /**
      * Requisição DELETE autenticada
      *
      * @param string $endpoint Endpoint da API
-     * @param array $params Parâmetros da requisição
-     * @return array Resposta decodificada
+     * @param array<string,mixed> $params Parâmetros da requisição
+     * @return array<string,mixed> Resposta decodificada
      */
     public function delete(string $endpoint, array $params = []): array
     {
@@ -93,9 +102,10 @@ class BinanceClient
         $queryString = http_build_query($params);
         $signature = hash_hmac('sha256', $queryString, $this->secretKey);
 
-        $url = self::BASE_URL . $endpoint . '?' . $queryString . '&signature=' . $signature;
+        $payload = $queryString . '&signature=' . $signature;
+        $url = $this->baseUrl . $endpoint;
 
-        return $this->request('DELETE', $url);
+        return $this->request('DELETE', $url, $payload);
     }
 
     /**
@@ -103,72 +113,113 @@ class BinanceClient
      *
      * @param string $method Método HTTP (GET, POST, DELETE, etc)
      * @param string $url URL completa
-     * @return array Resposta decodificada ou erro
+     * @param string|null $body Payload form-urlencoded (para assinadas)
+     * @return array<string,mixed> Resposta decodificada ou erro
      */
-    private function request(string $method, string $url): array
+    private function request(string $method, string $url, ?string $body = null): array
     {
-        $ch = curl_init();
+        for ($attempt = 0; $attempt <= self::MAX_RETRIES; $attempt++) {
+            $ch = curl_init();
 
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => self::TIMEOUT,
-            CURLOPT_HTTPHEADER => $this->getHeaders(),
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-
-        curl_close($ch);
-
-        if ($error) {
-            return [
-                'success' => false,
-                'error' => 'Erro de conexão: ' . $error
+            $options = [
+                CURLOPT_URL => $url,
+                CURLOPT_CUSTOMREQUEST => $method,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => self::TIMEOUT,
+                CURLOPT_HTTPHEADER => $this->getHeaders($body !== null),
+                CURLOPT_SSL_VERIFYPEER => $this->verifySsl,
+                CURLOPT_SSL_VERIFYHOST => $this->verifySsl ? 2 : 0,
             ];
-        }
 
-        if ($httpCode >= 400) {
+            if ($body !== null) {
+                $options[CURLOPT_POSTFIELDS] = $body;
+            }
+
+            curl_setopt_array($ch, $options);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            if ($error || $response === false) {
+                return [
+                    'success' => false,
+                    'error' => 'Erro de conexão: ' . ($error ?: 'Resposta vazia')
+                ];
+            }
+
+            if ($this->shouldRetry($httpCode, $attempt)) {
+                $this->backoff($attempt);
+                continue;
+            }
+
+            if ($httpCode >= 400) {
+                $decoded = json_decode($response, true);
+                return [
+                    'success' => false,
+                    'error' => $decoded['msg'] ?? 'Erro HTTP ' . $httpCode,
+                    'code' => $httpCode
+                ];
+            }
+
             $decoded = json_decode($response, true);
-            return [
-                'success' => false,
-                'error' => $decoded['msg'] ?? 'Erro HTTP ' . $httpCode,
-                'code' => $httpCode
-            ];
+
+            if ($decoded === null && $response !== '') {
+                return [
+                    'success' => false,
+                    'error' => 'Resposta inválida: ' . $response
+                ];
+            }
+
+            return $decoded ?? [];
         }
 
-        $decoded = json_decode($response, true);
-
-        if ($decoded === null && $response !== '') {
-            return [
-                'success' => false,
-                'error' => 'Resposta inválida: ' . $response
-            ];
-        }
-
-        return $decoded ?? [];
+        return [
+            'success' => false,
+            'error' => 'Erro desconhecido ao processar requisição'
+        ];
     }
 
     /**
      * Obter headers padrão
      *
-     * @return array Headers HTTP
+     * @return array<int,string> Headers HTTP
      */
-    private function getHeaders(): array
+    private function getHeaders(bool $hasBody = false): array
     {
         $headers = [
-            'Content-Type: application/json',
             'Accept: application/json',
         ];
+
+        if ($hasBody) {
+            $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        }
 
         if ($this->apiKey) {
             $headers[] = 'X-MBX-APIKEY: ' . $this->apiKey;
         }
 
         return $headers;
+    }
+
+    private function shouldRetry(int $httpCode, int $attempt): bool
+    {
+        if ($attempt >= self::MAX_RETRIES) {
+            return false;
+        }
+
+        if ($httpCode === 429) {
+            return true;
+        }
+
+        return $httpCode >= 500 && $httpCode < 600;
+    }
+
+    private function backoff(int $attempt): void
+    {
+        $delayMs = self::RETRY_DELAY_MS * ($attempt + 1);
+        usleep($delayMs * 1000);
     }
 }
