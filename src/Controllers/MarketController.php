@@ -21,9 +21,20 @@ class MarketController
             }
 
             $client = new BinanceClient();
-            $response = $client->get('/api/v3/ticker/price', [
+            $response = $client->get('/api/v3/ticker/24hr', [
                 'symbol' => $params['symbol']
             ]);
+
+            if (!isset($response['success']) || $response['success'] !== false) {
+                $response = [
+                    'symbol' => $response['symbol'] ?? $params['symbol'],
+                    'price' => $response['lastPrice'] ?? $response['price'] ?? '0',
+                    'priceChangePercent' => $response['priceChangePercent'] ?? null,
+                    'high' => $response['highPrice'] ?? null,
+                    'low' => $response['lowPrice'] ?? null,
+                    'volume' => $response['volume'] ?? null,
+                ];
+            }
 
             return $this->formatResponse($response);
         } catch (\Exception $e) {

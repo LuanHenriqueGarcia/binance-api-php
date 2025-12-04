@@ -44,7 +44,7 @@ class Router
     private function parseParams(): array
     {
         if ($this->method === 'GET') {
-            return $this->normalize(is_array($_GET) ? $_GET : []);
+            return $this->normalize((array)($_GET ?? []));
         }
 
         if ($this->method === 'POST' || $this->method === 'DELETE') {
