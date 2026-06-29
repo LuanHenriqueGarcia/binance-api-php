@@ -343,6 +343,21 @@ class Router
         $pass = Config::getAuthPassword();
 
         if (!$user || !$pass) {
+            // Sem Basic Auth configurado: a API exporia conta/trading com as
+            // credenciais de exchange do servidor. Em produção, falha fechada,
+            // a menos que ALLOW_UNAUTHENTICATED=true seja definido explicitamente.
+            $isProduction = Config::getEnvironment() === 'production';
+            $allowOpen = Config::get('ALLOW_UNAUTHENTICATED', 'false') === 'true';
+
+            if ($isProduction && !$allowOpen) {
+                $this->sendError(
+                    'Autenticação obrigatória não configurada. Defina BASIC_AUTH_USER e '
+                    . 'BASIC_AUTH_PASSWORD (ou ALLOW_UNAUTHENTICATED=true para liberar conscientemente).',
+                    503
+                );
+                return false;
+            }
+
             return true;
         }
 

@@ -75,7 +75,7 @@ class CoinbaseAccountController
                 return ['success' => false, 'error' => $error];
             }
 
-            $response = $this->getClient($apiKey, $secretKey, $keyFile)->get('/api/v3/brokerage/accounts/' . $accountId);
+            $response = $this->getClient($apiKey, $secretKey, $keyFile)->get('/api/v3/brokerage/accounts/' . rawurlencode((string) $accountId));
 
             return $this->formatResponse($response);
         } catch (\Exception $e) {

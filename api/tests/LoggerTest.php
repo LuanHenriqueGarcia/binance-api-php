@@ -202,6 +202,27 @@ class LoggerTest extends TestCase
         $this->assertStringContainsString('BTCUSDT', $content);
     }
 
+    public function testMasksKeysCaseInsensitively(): void
+    {
+        Config::fake([
+            'APP_DEBUG' => 'true',
+            'APP_LOG_FILE' => $this->logFile
+        ]);
+
+        Logger::info([
+            'API_KEY' => 'UPPERcaseSecretValue123456',
+            'Authorization' => 'Bearer tok_abcdef1234567890',
+        ]);
+
+        $content = file_get_contents($this->logFile);
+
+        // Mascarado mesmo com case diferente e para a chave Authorization
+        $this->assertStringNotContainsString('UPPERcaseSecretValue123456', $content);
+        $this->assertStringContainsString('UPPE****', $content);
+        $this->assertStringNotContainsString('Bearer tok_abcdef1234567890', $content);
+        $this->assertStringContainsString('Bear****', $content);
+    }
+
     public function testMaskDoesNotAffectNonSensitiveKeys(): void
     {
         Config::fake([

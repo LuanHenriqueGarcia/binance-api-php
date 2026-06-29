@@ -55,11 +55,11 @@ class Logger
      */
     private static function mask(array $context): array
     {
-        $sensitiveKeys = ['api_key', 'secret_key', 'X-MBX-APIKEY'];
+        $sensitiveKeys = ['api_key', 'secret_key', 'secretkey', 'apikey', 'x-mbx-apikey', 'api_secret', 'password', 'authorization'];
 
         $masked = [];
         foreach ($context as $key => $value) {
-            if (in_array($key, $sensitiveKeys, true) && is_string($value)) {
+            if (is_string($value) && in_array(strtolower((string) $key), $sensitiveKeys, true)) {
                 $masked[$key] = substr($value, 0, 4) . '****';
             } else {
                 $masked[$key] = $value;

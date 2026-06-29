@@ -116,7 +116,8 @@ class CoinbaseClient implements ClientInterface
     private function request(string $method, string $url, ?string $body, string $endpoint, bool $isPublic): array
     {
         $start = microtime(true);
-        for ($attempt = 0; $attempt <= self::MAX_RETRIES; $attempt++) {
+        $attempt = 0;
+        while (true) {
             $ch = curl_init();
 
             /** @var array<string,string> $responseHeaders */
@@ -162,6 +163,7 @@ class CoinbaseClient implements ClientInterface
             $retryAfterMs = $this->getRetryAfterMs($responseHeaders);
             if ($this->shouldRetry($httpCode, $attempt)) {
                 $this->backoff($attempt, $retryAfterMs);
+                $attempt++;
                 continue;
             }
 
@@ -188,11 +190,6 @@ class CoinbaseClient implements ClientInterface
             $this->logRequest($method, $url, $httpCode, $attempt, $start, $responseHeaders, null);
             return $decoded ?? [];
         }
-
-        return [
-            'success' => false,
-            'error' => 'Erro desconhecido ao processar requisição'
-        ];
     }
 
     /**
@@ -306,13 +303,24 @@ class CoinbaseClient implements ClientInterface
         }
 
         $signature = '';
-        $signed = openssl_sign($signingInput, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+        $signed = $this->signData($signingInput, $signature, $privateKey);
         if (!$signed) {
             throw new \RuntimeException('Falha ao assinar JWT');
         }
 
         $joseSignature = $this->derToJose($signature, 32);
         return $signingInput . '.' . $this->base64UrlEncode($joseSignature);
+    }
+
+    /**
+     * Assina os dados com a chave privada (ES256).
+     * Isolado em método próprio para permitir simular falha em testes.
+     *
+     * @param \OpenSSLAsymmetricKey $privateKey
+     */
+    protected function signData(string $data, string &$signature, $privateKey): bool
+    {
+        return openssl_sign($data, $signature, $privateKey, OPENSSL_ALGO_SHA256);
     }
 
     private function base64UrlEncode(string $data): string
@@ -464,7 +472,7 @@ class CoinbaseClient implements ClientInterface
             return [null, null];
         }
 
-        $contents = file_get_contents($path);
+        $contents = $this->readFileContents($path);
         if ($contents === false) {
             return [null, null];
         }
@@ -478,6 +486,17 @@ class CoinbaseClient implements ClientInterface
             isset($decoded['name']) ? (string) $decoded['name'] : null,
             isset($decoded['privateKey']) ? (string) $decoded['privateKey'] : null,
         ];
+    }
+
+    /**
+     * Lê o conteúdo de um arquivo.
+     * Isolado em método próprio para permitir simular falha de leitura em testes.
+     *
+     * @return string|false
+     */
+    protected function readFileContents(string $path)
+    {
+        return file_get_contents($path);
     }
 
     private function normalizeSecret(string $secret): string

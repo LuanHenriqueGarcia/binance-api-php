@@ -500,14 +500,19 @@ class CoinbaseClientTest extends TestCase
             'curve_name' => 'prime256v1',
         ]);
 
-        if ($key === false) {
-            $this->markTestSkipped('Cannot generate EC keys in this environment');
+        if ($key !== false) {
+            openssl_pkey_export($key, $privateKeyPem);
         }
 
-        openssl_pkey_export($key, $privateKeyPem);
-
+        // Fallback para uma chave EC P-256 de teste fixa quando o ambiente não
+        // consegue gerar/exportar chaves EC (ex.: Windows sem openssl.cnf).
+        // Chave exclusiva para testes — sem qualquer uso em produção.
         if (!$privateKeyPem) {
-            $this->markTestSkipped('Cannot export EC key in this environment');
+            $privateKeyPem = "-----BEGIN PRIVATE KEY-----\n"
+                . "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgsVqhcaUUQIkhwP51\n"
+                . "RdNUfXDkWVciXf0dcI0aoaQ6ay2hRANCAATiXr11Wr8JKP6pXaski6hgAHP/voQm\n"
+                . "/hnsUo3TIZDwQc1VpxFptC2CJ4i6cwU1JQaN/A6uV5lRov7yqpQoMrFq\n"
+                . "-----END PRIVATE KEY-----\n";
         }
 
         Config::fake(['COINBASE_SSL_VERIFY' => 'false']);

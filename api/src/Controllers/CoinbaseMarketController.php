@@ -64,7 +64,7 @@ class CoinbaseMarketController
                 return ['success' => false, 'error' => $error];
             }
 
-            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . $productId);
+            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . rawurlencode((string) $productId));
 
             return $this->formatResponse($response);
         } catch (\Exception $e) {
@@ -120,7 +120,7 @@ class CoinbaseMarketController
                 return ['success' => false, 'error' => $error];
             }
 
-            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . $productId . '/ticker', [
+            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . rawurlencode((string) $productId) . '/ticker', [
                 'limit' => $params['limit'] ?? null,
                 'start' => $params['start'] ?? null,
                 'end' => $params['end'] ?? null,
@@ -155,7 +155,7 @@ class CoinbaseMarketController
                 return ['success' => false, 'error' => $error];
             }
 
-            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . $productId . '/candles', [
+            $response = $this->getClient()->get('/api/v3/brokerage/market/products/' . rawurlencode((string) $productId) . '/candles', [
                 'start' => $params['start'],
                 'end' => $params['end'],
                 'granularity' => $params['granularity'],

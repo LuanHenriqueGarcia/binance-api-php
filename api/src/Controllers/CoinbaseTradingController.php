@@ -135,7 +135,7 @@ class CoinbaseTradingController
                 return ['success' => false, 'error' => $error];
             }
 
-            $response = $this->getClient($apiKey, $secretKey, $keyFile)->get('/api/v3/brokerage/orders/historical/' . $params['order_id']);
+            $response = $this->getClient($apiKey, $secretKey, $keyFile)->get('/api/v3/brokerage/orders/historical/' . rawurlencode((string) $params['order_id']));
 
             return $this->formatResponse($response);
         } catch (\Exception $e) {

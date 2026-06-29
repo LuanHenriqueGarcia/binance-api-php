@@ -11,7 +11,7 @@ API REST em PHP para integracao com Binance e Coinbase.
 
 - PHP 8.2+
 - Composer
-- Extensoes PHP: curl, openssl, json, bcmath, pdo, pdo_sqlite, pdo_pgsql, zip
+- Extensoes PHP: curl, openssl, json, bcmath, zip
 
 ## Setup rapido
 
@@ -38,7 +38,8 @@ Use api/.env.example como base para api/.env.
 
 Principais chaves:
 - APP_ENV, APP_DEBUG
-- BASIC_AUTH_USER, BASIC_AUTH_PASSWORD (opcional)
+- BASIC_AUTH_USER, BASIC_AUTH_PASSWORD (obrigatorio em producao; senao a API retorna 503, salvo ALLOW_UNAUTHENTICATED=true)
+- ALLOW_UNAUTHENTICATED (libera acesso sem Basic Auth em producao - use apenas atras de um gateway de auth)
 - BINANCE_API_KEY, BINANCE_SECRET_KEY
 - BINANCE_SSL_VERIFY, BINANCE_CA_BUNDLE
 - COINBASE_API_KEY, COINBASE_API_SECRET, COINBASE_KEY_FILE

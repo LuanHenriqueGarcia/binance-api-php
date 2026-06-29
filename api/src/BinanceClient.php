@@ -40,8 +40,6 @@ class BinanceClient implements ClientInterface
      * @param string $endpoint Endpoint da API (ex: /api/v3/ping)
      * @param array<string,mixed> $params Parâmetros da requisição
      * @return array<string,mixed> Resposta decodificada
-     *
-     * @codeCoverageIgnore
      */
     public function get(string $endpoint, array $params = []): array
     {
@@ -68,8 +66,6 @@ class BinanceClient implements ClientInterface
      * @param string $endpoint Endpoint da API
      * @param array<string,mixed> $params Parâmetros da requisição
      * @return array<string,mixed> Resposta decodificada
-     *
-     * @codeCoverageIgnore
      */
     public function post(string $endpoint, array $params = []): array
     {
@@ -97,8 +93,6 @@ class BinanceClient implements ClientInterface
      * @param string $endpoint Endpoint da API
      * @param array<string,mixed> $params Parâmetros da requisição
      * @return array<string,mixed> Resposta decodificada
-     *
-     * @codeCoverageIgnore
      */
     public function delete(string $endpoint, array $params = []): array
     {
@@ -127,13 +121,12 @@ class BinanceClient implements ClientInterface
      * @param string $url URL completa
      * @param string|null $body Payload form-urlencoded (para assinadas)
      * @return array<string,mixed> Resposta decodificada ou erro
-     *
-     * @codeCoverageIgnore
      */
     private function request(string $method, string $url, ?string $body = null): array
     {
         $start = microtime(true);
-        for ($attempt = 0; $attempt <= self::MAX_RETRIES; $attempt++) {
+        $attempt = 0;
+        while (true) {
             $ch = curl_init();
 
             /** @var array<string,string> $responseHeaders */
@@ -166,11 +159,7 @@ class BinanceClient implements ClientInterface
 
             curl_setopt_array($ch, $options);
 
-            $response = curl_exec($ch);
-            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $error = curl_error($ch);
-
-            curl_close($ch);
+            [$response, $httpCode, $error] = $this->execCurl($ch);
 
             if ($error || $response === false) {
                 $this->logRequest($method, $url, $httpCode, $attempt, $start, $responseHeaders, $error ?: 'Resposta vazia');
@@ -183,6 +172,7 @@ class BinanceClient implements ClientInterface
             $retryAfterMs = $this->getRetryAfterMs($responseHeaders);
             if ($this->shouldRetry($httpCode, $attempt)) {
                 $this->backoff($attempt, $retryAfterMs);
+                $attempt++;
                 continue;
             }
 
@@ -209,11 +199,22 @@ class BinanceClient implements ClientInterface
             $this->logRequest($method, $url, $httpCode, $attempt, $start, $responseHeaders, null);
             return $decoded ?? [];
         }
+    }
 
-        return [
-            'success' => false,
-            'error' => 'Erro desconhecido ao processar requisição'
-        ];
+    /**
+     * Executa o cURL e retorna [response|false, httpCode, errorMsg].
+     * Isolado em método próprio para permitir simulação em testes.
+     *
+     * @param \CurlHandle $ch
+     * @return array{0:string|false,1:int,2:string}
+     */
+    protected function execCurl($ch): array
+    {
+        $response = curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        return [$response, $httpCode, $error];
     }
 
     /**
