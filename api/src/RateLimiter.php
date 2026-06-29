@@ -29,7 +29,7 @@ class RateLimiter
 
         /** @var array<int,int> $timestamps */
         $timestamps = [];
-        $fh = @fopen($file, 'c+');
+        $fh = $this->openFile($file);
         if ($fh === false) {
             return ['allowed' => true, 'retryAfter' => null];
         }
@@ -65,5 +65,13 @@ class RateLimiter
 
         fclose($fh);
         return ['allowed' => true, 'retryAfter' => null];
+    }
+
+    /**
+     * @return resource|false
+     */
+    protected function openFile(string $file)
+    {
+        return @fopen($file, 'c+');
     }
 }

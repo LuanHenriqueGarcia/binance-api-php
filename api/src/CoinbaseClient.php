@@ -149,11 +149,7 @@ class CoinbaseClient implements ClientInterface
 
             curl_setopt_array($ch, $options);
 
-            $response = curl_exec($ch);
-            $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $error = curl_error($ch);
-
-            curl_close($ch);
+            [$response, $httpCode, $error] = $this->execCurl($ch);
 
             if ($error || $response === false) {
                 $this->logRequest($method, $url, $httpCode, $attempt, $start, $responseHeaders, $error ?: 'Resposta vazia');
@@ -200,9 +196,32 @@ class CoinbaseClient implements ClientInterface
     }
 
     /**
+     * Executa o curl e retorna [response|false, httpCode, errorMsg]
+     *
+     * @param \CurlHandle $ch
+     * @return array{0:string|false,1:int,2:string}
+     */
+    protected function execCurl($ch): array
+    {
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        return [$response, $httpCode, $error];
+    }
+
+    /**
      * @return array<int,string>
      */
     private function getHeaders(string $method, string $endpoint, bool $isPublic, bool $hasBody): array
+    {
+        return $this->buildHeaders($method, $endpoint, $isPublic, $hasBody);
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    protected function buildHeaders(string $method, string $endpoint, bool $isPublic, bool $hasBody): array
     {
         $headers = [
             'Accept: application/json',

@@ -993,4 +993,85 @@ class RouterTest extends TestCase
 
         $_GET = [];
     }
+
+    public function testDispatchCoinbaseUnknownSection(): void
+    {
+        Config::fake([]);
+        $router = new Router('GET', '/api/coinbase/unknown/action', []);
+
+        ob_start();
+        $router->dispatch();
+        $output = (string)ob_get_clean();
+
+        $decoded = json_decode($output, true);
+        $this->assertSame(404, http_response_code());
+        $this->assertSame('Ação não encontrada', $decoded['error']);
+    }
+
+    public function testDispatchCoinbaseMarketValidationPath(): void
+    {
+        Config::fake([]);
+        $router = new Router('GET', '/api/coinbase/market/product', []);
+
+        ob_start();
+        $router->dispatch();
+        $output = (string)ob_get_clean();
+
+        $decoded = json_decode($output, true);
+        $this->assertSame(400, http_response_code());
+        $this->assertFalse($decoded['success']);
+    }
+
+    public function testDispatchCoinbaseAccountValidationPath(): void
+    {
+        Config::fake([]);
+        $router = new Router('GET', '/api/coinbase/account/account', []);
+
+        ob_start();
+        $router->dispatch();
+        $output = (string)ob_get_clean();
+
+        $decoded = json_decode($output, true);
+        $this->assertSame(400, http_response_code());
+        $this->assertFalse($decoded['success']);
+    }
+
+    public function testDispatchCoinbaseTradingValidationPath(): void
+    {
+        Config::fake([]);
+        $router = new Router('POST', '/api/coinbase/trading/create-order', []);
+
+        ob_start();
+        $router->dispatch();
+        $output = (string)ob_get_clean();
+
+        $decoded = json_decode($output, true);
+        $this->assertSame(400, http_response_code());
+        $this->assertFalse($decoded['success']);
+    }
+
+    public function testHandleCoinbasePrivateMethodsUnknownActionByReflection(): void
+    {
+        $router = new Router('GET', '/api/coinbase/general/unknown', []);
+
+        $methods = [
+            'handleCoinbaseGeneral',
+            'handleCoinbaseMarket',
+            'handleCoinbaseAccount',
+            'handleCoinbaseTrading',
+        ];
+
+        foreach ($methods as $name) {
+            $method = new ReflectionMethod(Router::class, $name);
+            $method->setAccessible(true);
+
+            ob_start();
+            $method->invoke($router, 'unknown-action');
+            $output = (string)ob_get_clean();
+
+            $decoded = json_decode($output, true);
+            $this->assertSame('Ação não encontrada', $decoded['error']);
+            $this->assertSame(404, http_response_code());
+        }
+    }
 }

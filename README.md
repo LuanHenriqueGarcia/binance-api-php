@@ -1,131 +1,78 @@
-# Binance API Monorepo
+﻿# Binance API
 
-Monorepo com:
-- `api/`: API REST em PHP para Binance e Coinbase.
-- `web/`: frontend Next.js (dashboard de operacao e diagnostico).
+API REST em PHP para integracao com Binance e Coinbase.
 
-## Portas padrao
+## Objetivo deste repositorio
 
-- Frontend: `http://localhost:3000`
-- API: `http://localhost:8080/api`
-- PostgreSQL (docker): `localhost:5432`
+- Rodar a API localmente
+- Executar testes unitarios
 
-## Requisitos
+## Requisitos locais
 
-### Para API (local sem Docker)
 - PHP 8.2+
 - Composer
-- Extensoes PHP: `curl`, `openssl`, `json`, `bcmath`, `pdo`, `pdo_sqlite`, `pdo_pgsql`
-
-### Para Frontend
-- Node 20+
-- pnpm
+- Extensoes PHP: curl, openssl, json, bcmath, pdo, pdo_sqlite, pdo_pgsql, zip
 
 ## Setup rapido
-
-### 1) API com Docker (recomendado)
-
-```bash
-cd api
-docker-compose up --build -d
-```
-
-A API sobe em `http://localhost:8080/api`.
-
-### 2) Frontend
-
-```bash
-cd web
-cp .env.local.example .env.local
-pnpm install
-pnpm dev
-```
-
-Frontend em `http://localhost:3000`.
-
-## Variaveis de ambiente
-
-### Frontend (`web/.env.local`)
-
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
-```
-
-### API (`api/.env`)
-
-Pode usar `api/.env.example` como base.
-
-Principais chaves:
-- `APP_ENV`, `APP_DEBUG`
-- `BASIC_AUTH_USER`, `BASIC_AUTH_PASSWORD` (opcional)
-- `BINANCE_API_KEY`, `BINANCE_SECRET_KEY` (endpoints privados Binance)
-- `COINBASE_API_KEY`, `COINBASE_API_SECRET`, `COINBASE_KEY_FILE` (endpoints privados Coinbase)
-- `CORS_ALLOWED_ORIGINS` (padrao: `http://localhost:3000`)
-- `CORS_ALLOWED_METHODS`
-- `CORS_ALLOWED_HEADERS`
-- `METRICS_ENABLED`
-- `RATE_LIMIT_ENABLED`, `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW`
-
-## CORS e autenticacao
-
-- A API responde preflight `OPTIONS` com `204`.
-- Headers CORS enviados:
-  - `Access-Control-Allow-Origin`
-  - `Access-Control-Allow-Methods`
-  - `Access-Control-Allow-Headers`
-- O frontend usa `Authorization: Basic ...` quando usuario/senha forem preenchidos.
-- O frontend **nao** envia cookies (`credentials: 'include'` removido).
-
-## Banco de dados: decisao do projeto
-
-- Execucao padrao: PostgreSQL no `docker-compose` da API.
-- Testes locais: SQLite em memoria (mais rapido e sem dependencia externa).
-
-## Validacoes de qualidade
-
-### Backend
 
 ```bash
 cd api
 composer install
 composer test
-composer stan
 ```
 
-### Frontend
+Status esperado dos testes: GREEN.
+
+## Subir API local
 
 ```bash
-cd web
-pnpm install
-pnpm exec tsc --noEmit
-pnpm lint
-pnpm build
+cd api
+composer serve
 ```
+
+API em http://localhost:8080/api
+
+## Variaveis de ambiente
+
+Use api/.env.example como base para api/.env.
+
+Principais chaves:
+- APP_ENV, APP_DEBUG
+- BASIC_AUTH_USER, BASIC_AUTH_PASSWORD (opcional)
+- BINANCE_API_KEY, BINANCE_SECRET_KEY
+- BINANCE_SSL_VERIFY, BINANCE_CA_BUNDLE
+- COINBASE_API_KEY, COINBASE_API_SECRET, COINBASE_KEY_FILE
+- COINBASE_SSL_VERIFY, COINBASE_CA_BUNDLE
 
 ## Smoke test manual
 
-Com API no ar (`http://localhost:8080/api`):
+Com API no ar:
 
 ```bash
-# Infra
 curl -i http://localhost:8080/api/health
-curl -i http://localhost:8080/api/metrics
-
-# Binance publicos
 curl -i http://localhost:8080/api/general/ping
 curl -i "http://localhost:8080/api/market/ticker?symbol=BTCUSDT"
-
-# Coinbase publicos
 curl -i http://localhost:8080/api/coinbase/general/time
 curl -i "http://localhost:8080/api/coinbase/market/product?product_id=BTC-USD"
 ```
 
-Para endpoints privados, inclua Basic Auth (se habilitado) e credenciais da exchange no request.
+## Nota sobre SSL em ambiente local
 
-## Estrutura util
+Em algumas maquinas Windows, a validacao de certificado pode falhar para chamadas externas.
 
-- Backend entrypoint: `api/index.php`
-- Router: `api/src/Router.php`
-- Clients: `api/src/BinanceClient.php`, `api/src/CoinbaseClient.php`
-- Front API client: `web/lib/api-client.ts`
-- Dashboard pages: `web/app/(dashboard)/*`
+Para desenvolvimento local, ajuste no api/.env:
+
+```env
+BINANCE_SSL_VERIFY=false
+COINBASE_SSL_VERIFY=false
+```
+
+Em producao, mantenha SSL habilitado e use CA bundle confiavel.
+
+## Estrutura relevante
+
+- api/index.php
+- api/src/Router.php
+- api/src/BinanceClient.php
+- api/src/CoinbaseClient.php
+- api/tests/

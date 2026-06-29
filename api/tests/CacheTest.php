@@ -128,6 +128,28 @@ class CacheTest extends TestCase
         $this->assertSame(['new' => 'data'], $result);
     }
 
+    public function testGetReturnsNullWhenReadFileFails(): void
+    {
+        $dir = sys_get_temp_dir() . '/cache_read_fail_' . uniqid();
+
+        $cache = new class($dir) extends \BinanceAPI\Cache {
+            protected function readFile(string $path)
+            {
+                return false;
+            }
+        };
+
+        $cache->set('mykey', ['data' => 1]);
+        $result = $cache->get('mykey', 3600);
+
+        $this->assertNull($result);
+
+        // cleanup
+        $files = glob($dir . '/*');
+        if ($files) { foreach ($files as $f) { @unlink($f); } }
+        @rmdir($dir);
+    }
+
     public function testGetWithCorruptedFile(): void
     {
         // Write invalid JSON to cache file

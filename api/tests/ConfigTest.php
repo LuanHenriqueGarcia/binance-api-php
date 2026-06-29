@@ -463,4 +463,54 @@ ENV;
         $this->assertStringContainsString('storage', $path);
         $this->assertStringEndsWith('logs', $path);
     }
+
+    public function testLoadSkipsWhenNeitherEnvFileExists(): void
+    {
+        // Reset loaded flag via reflection so load() runs fully
+        $loaded = new ReflectionProperty(Config::class, 'loaded');
+        $loaded->setAccessible(true);
+        $config = new ReflectionProperty(Config::class, 'config');
+        $config->setAccessible(true);
+
+        $originalLoaded = $loaded->getValue();
+        $originalConfig = $config->getValue();
+
+        // Rename .env and .env.example temporarily if they exist
+        $envPath = __DIR__ . '/../.env';
+        $envExPath = __DIR__ . '/../.env.example';
+        $renamedEnv = $envPath . '.bak_test';
+        $renamedEx = $envExPath . '.bak_test';
+
+        $movedEnv = false;
+        $movedEx = false;
+
+        if (file_exists($envPath)) {
+            rename($envPath, $renamedEnv);
+            $movedEnv = true;
+        }
+        if (file_exists($envExPath)) {
+            rename($envExPath, $renamedEx);
+            $movedEx = true;
+        }
+
+        try {
+            $loaded->setValue(false);
+            $config->setValue([]);
+
+            Config::load();
+
+            // Should complete without error and be marked loaded
+            $this->assertTrue($loaded->getValue());
+        } finally {
+            // Restore state
+            $loaded->setValue($originalLoaded);
+            $config->setValue($originalConfig);
+            if ($movedEnv) {
+                rename($renamedEnv, $envPath);
+            }
+            if ($movedEx) {
+                rename($renamedEx, $envExPath);
+            }
+        }
+    }
 }

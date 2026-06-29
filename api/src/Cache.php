@@ -29,7 +29,7 @@ class Cache
             return null;
         }
 
-        $content = file_get_contents($file);
+        $content = $this->readFile($file);
         if ($content === false) {
             return null;
         }
@@ -50,5 +50,13 @@ class Cache
     private function path(string $key): string
     {
         return $this->dir . '/' . md5($key) . '.json';
+    }
+
+    /**
+     * @return string|false
+     */
+    protected function readFile(string $path)
+    {
+        return file_get_contents($path);
     }
 }

@@ -156,4 +156,19 @@ class RateLimiterTest extends TestCase
         $this->assertNotNull($result['retryAfter']);
         $this->assertLessThanOrEqual(1, $result['retryAfter']);
     }
+
+    public function testHitReturnsTrueWhenFopenFails(): void
+    {
+        $limiter = new class($this->testDir, 10, 60) extends \BinanceAPI\RateLimiter {
+            protected function openFile(string $file)
+            {
+                return false;
+            }
+        };
+
+        $result = $limiter->hit('fopen_fail_key');
+
+        $this->assertTrue($result['allowed']);
+        $this->assertNull($result['retryAfter']);
+    }
 }

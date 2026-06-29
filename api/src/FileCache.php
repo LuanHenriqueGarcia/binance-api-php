@@ -36,7 +36,7 @@ class FileCache implements CacheInterface
             return null;
         }
 
-        $content = file_get_contents($file);
+        $content = $this->readFile($file);
         if ($content === false) {
             return null;
         }
@@ -73,7 +73,7 @@ class FileCache implements CacheInterface
      */
     public function clear(): void
     {
-        $files = glob($this->dir . '/*.json');
+        $files = $this->globFiles($this->dir . '/*.json');
 
         if ($files === false) {
             return;
@@ -90,5 +90,21 @@ class FileCache implements CacheInterface
     private function path(string $key): string
     {
         return $this->dir . '/' . md5($key) . '.json';
+    }
+
+    /**
+     * @return string|false
+     */
+    protected function readFile(string $path)
+    {
+        return file_get_contents($path);
+    }
+
+    /**
+     * @return array<string>|false
+     */
+    protected function globFiles(string $pattern)
+    {
+        return glob($pattern);
     }
 }

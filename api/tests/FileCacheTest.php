@@ -260,4 +260,43 @@ class FileCacheTest extends TestCase
         $result = $this->cache->get('empty_file', 3600);
         $this->assertNull($result);
     }
+
+    public function testGetReturnsNullWhenReadFileFails(): void
+    {
+        $dir = sys_get_temp_dir() . '/fc_read_fail_' . uniqid();
+
+        $cache = new class($dir) extends \BinanceAPI\FileCache {
+            protected function readFile(string $path)
+            {
+                return false;
+            }
+        };
+
+        $cache->set('key', ['val' => 1]);
+        $result = $cache->get('key', 3600);
+
+        $this->assertNull($result);
+
+        $files = glob($dir . '/*');
+        if ($files) { foreach ($files as $f) { @unlink($f); } }
+        @rmdir($dir);
+    }
+
+    public function testClearHandlesGlobFalse(): void
+    {
+        $dir = sys_get_temp_dir() . '/fc_glob_fail_' . uniqid();
+
+        $cache = new class($dir) extends \BinanceAPI\FileCache {
+            protected function globFiles(string $pattern)
+            {
+                return false;
+            }
+        };
+
+        // Should not throw
+        $cache->clear();
+        $this->assertTrue(true);
+
+        @rmdir($dir);
+    }
 }
