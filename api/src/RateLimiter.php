@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
 class RateLimiter
 {
@@ -15,7 +15,7 @@ class RateLimiter
         $this->window = $window ?? (int)Config::get('RATE_LIMIT_WINDOW', 60);
 
         if (!is_dir($this->dir)) {
-            @mkdir($this->dir, 0777, true);
+            @mkdir($this->dir, 0750, true);
         }
     }
 

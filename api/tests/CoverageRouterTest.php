@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\Router;
-use BinanceAPI\Config;
+use TradersApi\Router;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -285,7 +285,7 @@ class CoverageRouterTest extends TestCase
         $output = $this->dispatchToString($router);
 
         $this->assertSame(200, http_response_code());
-        $this->assertStringContainsString('Binance API REST', $output);
+        $this->assertStringContainsString('Traders API REST', $output);
     }
 
     public function testDevelopmentWithoutBasicAuthIsAllowed(): void
@@ -296,6 +296,65 @@ class CoverageRouterTest extends TestCase
         $output = $this->dispatchToString($router);
 
         $this->assertSame(200, http_response_code());
-        $this->assertStringContainsString('Binance API REST', $output);
+        $this->assertStringContainsString('Traders API REST', $output);
+    }
+
+    // ---------- Credenciais via cabeçalhos HTTP ----------
+
+    public function testInjectCredentialHeadersFromHttpHeaders(): void
+    {
+        $_SERVER['HTTP_X_API_KEY'] = 'pub-key';
+        $_SERVER['HTTP_X_API_SECRET'] = 'sec-key';
+
+        $router = new Router('GET', '/api/account/info', []);
+        $params = $this->params($router);
+
+        $this->assertSame('pub-key', $params['api_key']);
+        $this->assertSame('sec-key', $params['secret_key']);
+        $this->assertSame('sec-key', $params['api_secret']);
+    }
+
+    public function testInjectCredentialHeadersDoesNotOverrideExplicitParams(): void
+    {
+        $_SERVER['HTTP_X_API_KEY'] = 'header-key';
+        $_SERVER['HTTP_X_API_SECRET'] = 'header-secret';
+
+        $router = new Router('POST', '/api/trading/create-order', [
+            'api_key' => 'body-key',
+            'secret_key' => 'body-secret',
+        ]);
+        $params = $this->params($router);
+
+        $this->assertSame('body-key', $params['api_key']);
+        $this->assertSame('body-secret', $params['secret_key']);
+        $this->assertSame('header-secret', $params['api_secret']);
+    }
+
+    public function testInjectCredentialHeadersIgnoresEmptyHeader(): void
+    {
+        $_SERVER['HTTP_X_API_KEY'] = '';
+
+        $router = new Router('GET', '/api/account/info', []);
+        $params = $this->params($router);
+
+        $this->assertArrayNotHasKey('api_key', $params);
+    }
+
+    // ---------- Health é público (sem Basic Auth) ----------
+
+    public function testHealthIsPublicEvenWithBasicAuthConfigured(): void
+    {
+        Config::fake([
+            'BASIC_AUTH_USER' => 'u',
+            'BASIC_AUTH_PASSWORD' => 'p',
+            'STORAGE_PATH' => sys_get_temp_dir(),
+        ]);
+
+        $router = new Router('GET', '/api/health', []);
+        $decoded = json_decode($this->dispatchToString($router), true);
+
+        $this->assertNotSame(401, http_response_code());
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('storage_writable', $decoded);
     }
 }

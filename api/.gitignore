@@ -21,4 +21,3 @@ storage/ratelimit/
 coverage/
 
 vendor/
-composer.lock

@@ -1,9 +1,9 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
-use BinanceAPI\Config;
-use BinanceAPI\Contracts\ClientInterface;
+use TradersApi\Config;
+use TradersApi\Contracts\ClientInterface;
 
 class BinanceClient implements ClientInterface
 {
@@ -18,6 +18,8 @@ class BinanceClient implements ClientInterface
     private string $baseUrl;
     private bool $verifySsl;
     private ?string $caBundle = null;
+    /** @var array<string,string> */
+    private array $responseHeaders = [];
 
     /**
      * Construtor
@@ -129,8 +131,7 @@ class BinanceClient implements ClientInterface
         while (true) {
             $ch = curl_init();
 
-            /** @var array<string,string> $responseHeaders */
-            $responseHeaders = [];
+            $this->responseHeaders = [];
             $options = [
                 CURLOPT_URL => $url,
                 CURLOPT_CUSTOMREQUEST => $method,
@@ -139,14 +140,7 @@ class BinanceClient implements ClientInterface
                 CURLOPT_HTTPHEADER => $this->getHeaders($body !== null),
                 CURLOPT_SSL_VERIFYPEER => $this->verifySsl,
                 CURLOPT_SSL_VERIFYHOST => $this->verifySsl ? 2 : 0,
-                CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
-                    $len = strlen($header);
-                    $parts = explode(':', $header, 2);
-                    if (count($parts) === 2) {
-                        $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
-                    }
-                    return $len;
-                },
+                CURLOPT_HEADERFUNCTION => [$this, 'captureHeader'],
             ];
 
             if ($this->caBundle && file_exists($this->caBundle)) {
@@ -160,6 +154,7 @@ class BinanceClient implements ClientInterface
             curl_setopt_array($ch, $options);
 
             [$response, $httpCode, $error] = $this->execCurl($ch);
+            $responseHeaders = $this->responseHeaders;
 
             if ($error || $response === false) {
                 $this->logRequest($method, $url, $httpCode, $attempt, $start, $responseHeaders, $error ?: 'Resposta vazia');
@@ -215,6 +210,22 @@ class BinanceClient implements ClientInterface
         $error = curl_error($ch);
         curl_close($ch);
         return [$response, $httpCode, $error];
+    }
+
+    /**
+     * Callback de CURLOPT_HEADERFUNCTION: captura os cabeçalhos da resposta.
+     * Método nomeado (em vez de closure inline) para permitir teste
+     * determinístico do parsing, sem depender de uma chamada de rede real.
+     *
+     * @param mixed $ch handle do cURL (não utilizado; exigido pela assinatura)
+     */
+    public function captureHeader($ch, string $header): int
+    {
+        $parts = explode(':', $header, 2);
+        if (count($parts) === 2) {
+            $this->responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+        }
+        return strlen($header);
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
 class Logger
 {
@@ -40,7 +40,7 @@ class Logger
         if ($logFile) {
             $dir = dirname($logFile);
             if (!is_dir($dir)) {
-                @mkdir($dir, 0777, true);
+                @mkdir($dir, 0750, true);
             }
             file_put_contents($logFile, $line . PHP_EOL, FILE_APPEND);
             return;

@@ -1,4 +1,4 @@
-﻿# Binance API
+﻿# Traders API
 
 API REST em PHP para integracao com Binance e Coinbase.
 
@@ -45,6 +45,26 @@ Principais chaves:
 - COINBASE_API_KEY, COINBASE_API_SECRET, COINBASE_KEY_FILE
 - COINBASE_SSL_VERIFY, COINBASE_CA_BUNDLE
 
+## Credenciais de exchange (importante)
+
+Ordem de preferencia para fornecer as chaves:
+
+1. **Servidor (.env)** — recomendado. Configure BINANCE_API_KEY/BINANCE_SECRET_KEY
+   (e equivalentes Coinbase) e nao envie segredos por requisicao.
+2. **Cabecalhos HTTP** — `X-API-Key` e `X-API-Secret`. Cabecalhos nao caem em
+   access logs, historico de navegador ou Referer.
+3. **Body JSON** (apenas em POST/DELETE).
+
+NUNCA envie `api_key`/`secret_key` na **query string** (ex: `?api_key=...&secret_key=...`):
+a URL completa costuma ser registrada em logs de servidor/proxy e no historico do
+navegador, expondo a chave secreta da sua conta.
+
+## Endpoints publicos vs protegidos
+
+- `/api/health` e publico (sem Basic Auth), para load balancers sondarem a aplicacao.
+- Todas as demais rotas exigem Basic Auth quando BASIC_AUTH_USER/PASSWORD estao
+  configurados (obrigatorio em producao).
+
 ## Smoke test manual
 
 Com API no ar:
@@ -59,16 +79,18 @@ curl -i "http://localhost:8080/api/coinbase/market/product?product_id=BTC-USD"
 
 ## Nota sobre SSL em ambiente local
 
-Em algumas maquinas Windows, a validacao de certificado pode falhar para chamadas externas.
+A verificacao de SSL vem **habilitada por padrao** (BINANCE_SSL_VERIFY=true,
+COINBASE_SSL_VERIFY=true).
 
-Para desenvolvimento local, ajuste no api/.env:
+Em algumas maquinas Windows a validacao de certificado pode falhar para chamadas
+externas. **Somente em desenvolvimento local**, voce pode ajustar no api/.env:
 
 ```env
 BINANCE_SSL_VERIFY=false
 COINBASE_SSL_VERIFY=false
 ```
 
-Em producao, mantenha SSL habilitado e use CA bundle confiavel.
+Em producao, mantenha SSL habilitado e use um CA bundle confiavel (BINANCE_CA_BUNDLE).
 
 ## Estrutura relevante
 

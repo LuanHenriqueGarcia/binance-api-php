@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
 class Metrics
 {

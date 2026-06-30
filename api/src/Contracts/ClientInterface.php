@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI\Contracts;
+namespace TradersApi\Contracts;
 
 /**
  * Interface para o cliente HTTP da Binance

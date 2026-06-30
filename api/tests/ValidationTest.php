@@ -1,6 +1,6 @@
 <?php
 
-use BinanceAPI\Validation;
+use TradersApi\Validation;
 use PHPUnit\Framework\TestCase;
 
 class ValidationTest extends TestCase

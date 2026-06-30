@@ -1,9 +1,9 @@
 <?php
 
-namespace BinanceAPI\Controllers;
+namespace TradersApi\Controllers;
 
-use BinanceAPI\CoinbaseClient;
-use BinanceAPI\Contracts\ClientInterface;
+use TradersApi\CoinbaseClient;
+use TradersApi\Contracts\ClientInterface;
 
 class CoinbaseGeneralController
 {

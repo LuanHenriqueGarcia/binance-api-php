@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
 class Config
 {
@@ -17,11 +17,11 @@ class Config
             return;
         }
 
+        // Carrega apenas o .env real. Sem fallback para .env.example em runtime:
+        // isso evitaria que a aplicação subisse com defaults de desenvolvimento
+        // (APP_ENV=development, APP_DEBUG=true, SSL desabilitado) sem perceber,
+        // caso o deploy esquecesse de provisionar o .env.
         $envFile = __DIR__ . '/../.env';
-
-        if (!file_exists($envFile)) {
-            $envFile = __DIR__ . '/../.env.example';
-        }
 
         if (file_exists($envFile)) {
             $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -73,7 +73,11 @@ class Config
     {
         self::load();
 
-        return self::$config[$key] ?? getenv($key) ?: $default;
+        // (config ?? env) ?: default — config tem prioridade, depois variável de
+        // ambiente, por fim o default. Parênteses tornam explícita a precedência
+        // (?? liga mais forte que ?:). Obs.: valores "falsy" ("0", "") caem para o
+        // default — comportamento legado intencional (ex.: SSL_VERIFY=0 => verifica).
+        return (self::$config[$key] ?? getenv($key)) ?: $default;
     }
 
     /**

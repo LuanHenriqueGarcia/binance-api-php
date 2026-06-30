@@ -1,6 +1,6 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
 class Cache
 {
@@ -10,7 +10,7 @@ class Cache
     {
         $this->dir = $dir ?? Config::getStoragePath('cache');
         if (!is_dir($this->dir)) {
-            @mkdir($this->dir, 0777, true);
+            @mkdir($this->dir, 0750, true);
         }
     }
 

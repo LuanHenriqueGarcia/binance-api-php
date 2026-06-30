@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\CoinbaseClient;
-use BinanceAPI\Config;
+use TradersApi\CoinbaseClient;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class CoinbaseClientTest extends TestCase

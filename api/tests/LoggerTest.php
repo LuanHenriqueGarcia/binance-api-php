@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\Logger;
-use BinanceAPI\Config;
+use TradersApi\Logger;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class LoggerTest extends TestCase

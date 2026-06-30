@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\Router;
-use BinanceAPI\Config;
+use TradersApi\Router;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class RouterTest extends TestCase
@@ -77,7 +77,7 @@ class RouterTest extends TestCase
         $output = (string)ob_get_clean();
 
         $this->assertSame(200, http_response_code());
-        $this->assertStringContainsString('Binance API REST', $output);
+        $this->assertStringContainsString('Traders API REST', $output);
     }
 
     public function testDispatchRootReturnsMessage(): void
@@ -90,7 +90,7 @@ class RouterTest extends TestCase
         $output = (string)ob_get_clean();
 
         $this->assertSame(200, http_response_code());
-        $this->assertStringContainsString('Binance API REST', $output);
+        $this->assertStringContainsString('Traders API REST', $output);
     }
 
     public function testDispatchUnknownReturns404(): void
@@ -763,7 +763,7 @@ class RouterTest extends TestCase
 
         // /api without anything else returns the root message
         $this->assertSame(200, http_response_code());
-        $this->assertStringContainsString('Binance API REST', $output);
+        $this->assertStringContainsString('Traders API REST', $output);
     }
 
     public function testDispatchEmptyPath(): void

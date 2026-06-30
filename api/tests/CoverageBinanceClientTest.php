@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\BinanceClient;
-use BinanceAPI\Config;
+use TradersApi\BinanceClient;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-use BinanceAPI\Metrics;
+use TradersApi\Metrics;
 use PHPUnit\Framework\TestCase;
 
 class MetricsTest extends TestCase

@@ -1,9 +1,9 @@
 <?php
 
-use BinanceAPI\Controllers\GeneralController;
-use BinanceAPI\Contracts\ClientInterface;
-use BinanceAPI\Cache;
-use BinanceAPI\Config;
+use TradersApi\Controllers\GeneralController;
+use TradersApi\Contracts\ClientInterface;
+use TradersApi\Cache;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class GeneralControllerTest extends TestCase

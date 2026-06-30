@@ -1,33 +1,19 @@
-# Ambiente
 .env
 .env.local
 .env.*.local
-
-# Editores
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Dependências PHP
 api/vendor/
-api/composer.lock
-
-# Cache e cobertura de testes
 api/coverage/
 api/.phpunit.result.cache
 api/.phpunit.cache/
-
-# Storage gerado em runtime
 api/storage/*.log
 api/storage/cache/
 api/storage/ratelimit/
-
-# Chaves privadas
 *.json.key
 *.pem

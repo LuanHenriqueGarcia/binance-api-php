@@ -1,12 +1,12 @@
 <?php
 
-namespace BinanceAPI\Controllers;
+namespace TradersApi\Controllers;
 
-use BinanceAPI\BinanceClient;
-use BinanceAPI\Contracts\ClientInterface;
-use BinanceAPI\Validation;
-use BinanceAPI\Cache;
-use BinanceAPI\Config;
+use TradersApi\BinanceClient;
+use TradersApi\Contracts\ClientInterface;
+use TradersApi\Validation;
+use TradersApi\Cache;
+use TradersApi\Config;
 
 class GeneralController
 {

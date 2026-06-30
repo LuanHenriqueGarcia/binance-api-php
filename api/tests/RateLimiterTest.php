@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\RateLimiter;
-use BinanceAPI\Config;
+use TradersApi\RateLimiter;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class RateLimiterTest extends TestCase
@@ -159,7 +159,7 @@ class RateLimiterTest extends TestCase
 
     public function testHitReturnsTrueWhenFopenFails(): void
     {
-        $limiter = new class($this->testDir, 10, 60) extends \BinanceAPI\RateLimiter {
+        $limiter = new class($this->testDir, 10, 60) extends \TradersApi\RateLimiter {
             protected function openFile(string $file)
             {
                 return false;

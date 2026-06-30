@@ -1,6 +1,6 @@
 <?php
 
-use BinanceAPI\Config;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 /**

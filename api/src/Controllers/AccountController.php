@@ -1,11 +1,11 @@
 <?php
 
-namespace BinanceAPI\Controllers;
+namespace TradersApi\Controllers;
 
-use BinanceAPI\BinanceClient;
-use BinanceAPI\Contracts\ClientInterface;
-use BinanceAPI\Config;
-use BinanceAPI\Validation;
+use TradersApi\BinanceClient;
+use TradersApi\Contracts\ClientInterface;
+use TradersApi\Config;
+use TradersApi\Validation;
 
 class AccountController
 {

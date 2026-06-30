@@ -1,18 +1,18 @@
 <?php
 
-namespace BinanceAPI;
+namespace TradersApi;
 
-use BinanceAPI\Controllers\GeneralController;
-use BinanceAPI\Controllers\MarketController;
-use BinanceAPI\Controllers\AccountController;
-use BinanceAPI\Controllers\TradingController;
-use BinanceAPI\Controllers\CoinbaseGeneralController;
-use BinanceAPI\Controllers\CoinbaseMarketController;
-use BinanceAPI\Controllers\CoinbaseAccountController;
-use BinanceAPI\Controllers\CoinbaseTradingController;
-use BinanceAPI\Config;
-use BinanceAPI\RateLimiter;
-use BinanceAPI\Metrics;
+use TradersApi\Controllers\GeneralController;
+use TradersApi\Controllers\MarketController;
+use TradersApi\Controllers\AccountController;
+use TradersApi\Controllers\TradingController;
+use TradersApi\Controllers\CoinbaseGeneralController;
+use TradersApi\Controllers\CoinbaseMarketController;
+use TradersApi\Controllers\CoinbaseAccountController;
+use TradersApi\Controllers\CoinbaseTradingController;
+use TradersApi\Config;
+use TradersApi\RateLimiter;
+use TradersApi\Metrics;
 
 class Router
 {
@@ -30,8 +30,9 @@ class Router
     public function __construct(?string $method = null, ?string $path = null, ?array $params = null)
     {
         $this->method = $method ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET');
-        $this->path = $path ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $this->path = $path ?? (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
         $this->params = $params ?? $this->parseParams();
+        $this->injectCredentialHeaders();
         $this->rateLimiter = new RateLimiter();
 
         $correlation = $_SERVER['HTTP_X_CORRELATION_ID'] ?? null;
@@ -62,6 +63,28 @@ class Router
     }
 
     /**
+     * Permite enviar credenciais de exchange via cabeçalhos HTTP
+     * (X-API-Key / X-API-Secret) em vez de query string. Cabeçalhos não
+     * vazam para access logs, histórico de navegador ou Referer como a URL.
+     * O ideal continua sendo configurar as chaves no servidor (.env).
+     */
+    private function injectCredentialHeaders(): void
+    {
+        $key = $_SERVER['HTTP_X_API_KEY'] ?? null;
+        $secret = $_SERVER['HTTP_X_API_SECRET'] ?? null;
+
+        if (is_string($key) && $key !== '' && !isset($this->params['api_key'])) {
+            $this->params['api_key'] = $key;
+        }
+
+        if (is_string($secret) && $secret !== '') {
+            // Binance usa "secret_key"; Coinbase usa "api_secret".
+            $this->params['secret_key'] ??= $secret;
+            $this->params['api_secret'] ??= $secret;
+        }
+    }
+
+    /**
      * Dispatch da requisição para o controller apropriado
      */
     public function dispatch(): void
@@ -74,21 +97,10 @@ class Router
             return;
         }
 
-        if (!$this->checkAuth()) {
-            return;
-        }
+        $pathParts = array_values(array_filter(explode('/', $this->path)));
 
-        $pathParts = array_filter(explode('/', $this->path));
-        $pathParts = array_values($pathParts);
-
-        // Remover 'api' do início se existir
         if (!empty($pathParts) && $pathParts[0] === 'api') {
             array_shift($pathParts);
-        }
-
-        if (empty($pathParts)) {
-            $this->sendResponse(['message' => 'Binance API REST - PHP']);
-            return;
         }
 
         $endpoint = $pathParts[0] ?? null;
@@ -97,6 +109,15 @@ class Router
 
         if ($endpoint === 'health') {
             $this->handleHealth();
+            return;
+        }
+
+        if (!$this->checkAuth()) {
+            return;
+        }
+
+        if (empty($pathParts)) {
+            $this->sendResponse(['message' => 'Traders API REST - PHP']);
             return;
         }
 
@@ -361,10 +382,13 @@ class Router
             return true;
         }
 
-        $inputUser = $_SERVER['PHP_AUTH_USER'] ?? null;
-        $inputPass = $_SERVER['PHP_AUTH_PW'] ?? null;
+        $inputUser = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
+        $inputPass = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
+        
+        $userOk = hash_equals($user, $inputUser);
+        $passOk = hash_equals($pass, $inputPass);
 
-        if ($inputUser === $user && $inputPass === $pass) {
+        if ($userOk && $passOk) {
             return true;
         }
 
@@ -389,8 +413,9 @@ class Router
         }
 
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'cli';
-        $prefix = $endpoint === 'coinbase' ? 'coinbase:' . ($action ?? 'unknown') : $endpoint;
-        $routeKey = $prefix . ':' . ($this->method ?? 'GET') . ':' . $ip;
+        // No ramo coinbase, a checagem acima garante $action em ['account','trading'].
+        $prefix = $endpoint === 'coinbase' ? 'coinbase:' . $action : $endpoint;
+        $routeKey = $prefix . ':' . $this->method . ':' . $ip;
         $hit = $this->rateLimiter->hit($routeKey);
 
         if (!$hit['allowed']) {

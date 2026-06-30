@@ -1,12 +1,12 @@
 <?php
 
-use BinanceAPI\Controllers\AccountController;
-use BinanceAPI\Controllers\TradingController;
-use BinanceAPI\Controllers\MarketController;
-use BinanceAPI\Controllers\CoinbaseAccountController;
-use BinanceAPI\Controllers\CoinbaseTradingController;
-use BinanceAPI\Contracts\ClientInterface;
-use BinanceAPI\Config;
+use TradersApi\Controllers\AccountController;
+use TradersApi\Controllers\TradingController;
+use TradersApi\Controllers\MarketController;
+use TradersApi\Controllers\CoinbaseAccountController;
+use TradersApi\Controllers\CoinbaseTradingController;
+use TradersApi\Contracts\ClientInterface;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 /**

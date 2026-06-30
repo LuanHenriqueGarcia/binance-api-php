@@ -1,17 +1,17 @@
 {
-  "name": "binance/api-rest-php",
-  "description": "API REST em PHP para integração com Binance - Sem dependências externas",
+  "name": "traders/api-rest-php",
+  "description": "API REST em PHP para integração com Binance e Coinbase - Sem dependências de runtime",
   "type": "project",
   "require": {
-    "php": ">=8.1"
+    "php": ">=8.2"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.3",
-    "phpstan/phpstan": "^1.11"
+    "phpstan/phpstan": "^2.0"
   },
   "autoload": {
     "psr-4": {
-      "BinanceAPI\\": "src/"
+      "TradersApi\\": "src/"
     }
   },
   "scripts": {

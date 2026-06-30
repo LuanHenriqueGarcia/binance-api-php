@@ -1,7 +1,7 @@
 <?php
 
-use BinanceAPI\Cache;
-use BinanceAPI\Config;
+use TradersApi\Cache;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class CacheTest extends TestCase
@@ -132,7 +132,7 @@ class CacheTest extends TestCase
     {
         $dir = sys_get_temp_dir() . '/cache_read_fail_' . uniqid();
 
-        $cache = new class($dir) extends \BinanceAPI\Cache {
+        $cache = new class($dir) extends \TradersApi\Cache {
             protected function readFile(string $path)
             {
                 return false;

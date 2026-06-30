@@ -1,8 +1,8 @@
 <?php
 
-use BinanceAPI\Controllers\CoinbaseAccountController;
-use BinanceAPI\Contracts\ClientInterface;
-use BinanceAPI\Config;
+use TradersApi\Controllers\CoinbaseAccountController;
+use TradersApi\Contracts\ClientInterface;
+use TradersApi\Config;
 use PHPUnit\Framework\TestCase;
 
 class CoinbaseAccountControllerTest extends TestCase
