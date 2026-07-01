@@ -1,4 +1,4 @@
-﻿# Binance API
+﻿# Traders API
 
 API REST em PHP para integracao com Binance e Coinbase.
 
