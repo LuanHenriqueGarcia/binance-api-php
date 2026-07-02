@@ -4,8 +4,8 @@ API REST em PHP para integracao com Binance e Coinbase.
 
 ## Objetivo deste repositorio
 
-- Rodar a API localmente
-- Executar testes unitarios
+- Facilitar a compra/venda de cripto moedas
+- Monitoramento de mercado e analise de investimento
 
 ## Requisitos locais
 
@@ -45,7 +45,7 @@ Principais chaves:
 - COINBASE_API_KEY, COINBASE_API_SECRET, COINBASE_KEY_FILE
 - COINBASE_SSL_VERIFY, COINBASE_CA_BUNDLE
 
-## Smoke test manual
+## test manual
 
 Com API no ar:
 
